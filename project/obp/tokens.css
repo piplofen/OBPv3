@@ -364,6 +364,22 @@ button { font-family: inherit; cursor: pointer; }
   flex: none;
 }
 
+/* ---------- Логотип ---------- */
+.logo-title {
+  font-family: var(--serif);
+  font-size: 18.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.logo-sub {
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* 1fr-треки грида: разрешаем сжиматься (иначе nowrap-тексты раздувают колонки) */
 .two-col > *, .grid-4 > *, .stack-sm > *, .footer-grid > *, .hero-grid > * { min-width: 0; }
 
@@ -383,6 +399,8 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--paper);
   border-bottom: 1px solid var(--line);
   box-shadow: var(--shadow);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 .mobile-menu a, .mobile-menu button.mm-link {
   display: flex;
@@ -426,7 +444,12 @@ button { font-family: inherit; cursor: pointer; }
   .section { padding: 64px 0; }
   .footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
   .footer-bottom { flex-direction: column !important; gap: 10px !important; }
-  .site-logo { transform: scale(0.86); transform-origin: left center; }
+  .logo-title { font-size: 16px; }
+  .logo-sub { font-size: 9.5px; letter-spacing: 0.11em; }
+  .site-logo { gap: 10px !important; }
+  .site-logo svg { width: 34px; height: 34px; }
+  .ta-resp { text-align: left !important; }
+  .cta-right { align-items: flex-start !important; }
   .hero-float {
     position: static !important;
     margin-top: 14px;
@@ -437,7 +460,6 @@ button { font-family: inherit; cursor: pointer; }
   .modal-card { padding: 28px 20px !important; }
   .step-label { font-size: 10px !important; }
   .pad-resp { padding: 24px 20px !important; }
-  .cta-right { align-items: flex-start !important; }
 
   /* Личный кабинет: сайдбар → горизонтальная лента */
   .lk-shell { grid-template-columns: 1fr; padding: 14px 14px 48px; gap: 16px; }
@@ -455,6 +477,23 @@ button { font-family: inherit; cursor: pointer; }
   .lk-fam button { flex: none !important; width: 54px; }
   .lk-side hr { display: none; }
   .lk-item { width: auto; flex: none; padding: 10px 13px; font-size: 13px; white-space: nowrap; }
+}
+
+/* ---------- Маленькие телефоны ---------- */
+@media (max-width: 540px) {
+  .wrap { padding-left: 16px !important; padding-right: 16px !important; }
+  .hide-xs { display: none !important; }
+  .logo-title { font-size: 15px; }
+  .h-display { font-size: clamp(30px, 8.5vw, 40px); }
+  .h-1 { font-size: clamp(26px, 7vw, 32px) !important; }
+  .section { padding: 48px 0; }
+  .btn { padding: 13px 22px; font-size: 14.5px; }
+  .btn-sm { padding: 10px 16px; font-size: 13.5px; }
+  .lead { font-size: 16.5px; }
+  .lk-shell { padding: 12px 10px 40px; }
+  .lk-fam button { width: 48px; }
+  .modal-card { padding: 24px 16px !important; }
+  .ph-label { font-size: 10px; padding: 4px 8px; }
 }
 
 /* ---------- Скроллбар-аккуратность ---------- */

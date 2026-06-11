@@ -75,7 +75,7 @@ function LKLogin({ onLogin, onExit }) {
           <div className="h-display" style={{ fontSize: "clamp(34px, 3.4vw, 52px)" }}>
             Ваша медицина — в&nbsp;одном окне
           </div>
-          <p style={{ color: "rgba(242,239,232,0.65)", fontSize: 16.5, lineHeight: 1.6 }}>
+          <p className="hide-sm" style={{ color: "rgba(242,239,232,0.65)", fontSize: 16.5, lineHeight: 1.6 }}>
             Результаты анализов и исследований, запись к врачам, электронные
             пропуска на территорию — без звонков и ожидания.
           </p>
@@ -296,7 +296,7 @@ function LKHome({ go, cur, passes, appointments }) {
             <div style={{ fontWeight: 700, fontSize: 15.5 }}>{next.doctor}</div>
             <div className="small body-soft">{next.role} · {next.place}</div>
           </div>
-          <div style={{ textAlign: "right" }}>
+          <div className="ta-resp" style={{ textAlign: "right" }}>
             <div style={{ fontFamily: "var(--serif)", fontSize: 22 }}>{next.date} · {next.time}</div>
             <a href="#" className="small" onClick={(e) => { e.preventDefault(); go("passes"); }} style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none" }}>Пропуск оформлен →</a>
           </div>

@@ -22,17 +22,11 @@ function Logo({ dark = false, onClick }) {
       style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", flex: "none" }}
     >
       <LogoMark size={42}></LogoMark>
-      <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.18 }}>
-        <span style={{
-          fontFamily: "var(--serif)", fontSize: 18.5, fontWeight: 500, whiteSpace: "nowrap",
-          color: dark ? "#F2EFE8" : "var(--ink)", letterSpacing: "0.01em",
-        }}>
+      <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.18, minWidth: 0 }}>
+        <span className="logo-title" style={{ color: dark ? "#F2EFE8" : "var(--ink)" }}>
           Объединённая больница
         </span>
-        <span style={{
-          fontSize: 11, letterSpacing: "0.13em", textTransform: "uppercase",
-          fontWeight: 600, color: dark ? "rgba(242,239,232,0.6)" : "var(--ink-faint)",
-        }}>
+        <span className="logo-sub" style={{ color: dark ? "rgba(242,239,232,0.6)" : "var(--ink-faint)" }}>
           с поликлиникой
         </span>
       </span>
@@ -105,7 +99,7 @@ function Header({ nav, route, onBook }) {
               <span style={{ display: "block", fontWeight: 700, fontSize: 16 }}>8 (499) 333-30-00</span>
               <span style={{ display: "block", fontSize: 11.5, color: "var(--ink-faint)" }}>справочная, круглосуточно</span>
             </a>
-            <button className="btn btn-primary btn-sm" onClick={onBook}>Записаться</button>
+            <button className="btn btn-primary btn-sm hide-xs" onClick={onBook}>Записаться</button>
             <button className="burger" aria-label="Меню" onClick={() => setMenuOpen(!menuOpen)}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round">
                 {menuOpen ? (

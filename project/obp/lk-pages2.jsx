@@ -117,9 +117,9 @@ function LKHospital({ cur }) {
             <div className="body-soft" style={{ marginTop: 6 }}>{h.dept} · {h.room}</div>
             <div className="small" style={{ marginTop: 4, color: "var(--ink-faint)" }}>Лечащий врач: {h.doctor}</div>
           </div>
-          <div style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+          <div className="cta-right" style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
             <span className="badge badge-warn">Идёт подготовка</span>
-            <a href="#" onClick={(e) => e.preventDefault()} className="small" style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none" }}>{h.phone} — приёмное отделение</a>
+            <a href="#" onClick={(e) => e.preventDefault()} className="small ta-resp" style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none" }}>{h.phone} — приёмное отделение</a>
           </div>
         </div>
 
