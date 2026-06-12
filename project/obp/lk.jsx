@@ -16,6 +16,9 @@ function LkIcon({ name, size = 19 }) {
   if (name === "bed") return (<svg {...s} viewBox="0 0 20 20"><path d="M3 5v10M3 13h14v3M3 10.5h14V13"></path><circle cx="6.5" cy="8" r="1.6"></circle><path d="M9.5 10.5V8.5h5a2.5 2.5 0 0 1 2.5 2"></path></svg>);
   if (name === "prog") return (<svg {...s} viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"></circle><path d="M7 10.2l2.1 2.1L13.4 8"></path></svg>);
   if (name === "map") return (<svg {...s} viewBox="0 0 20 20"><path d="M3 5.5 7.5 4l5 1.5L17 4v10.5L12.5 16l-5-1.5L3 16V5.5Z"></path><path d="M7.5 4v10.5M12.5 5.5V16"></path></svg>);
+  if (name === "dots") return (<svg {...s} viewBox="0 0 20 20"><circle cx="4.5" cy="10" r="1.4"></circle><circle cx="10" cy="10" r="1.4"></circle><circle cx="15.5" cy="10" r="1.4"></circle></svg>);
+  if (name === "bell") return (<svg {...s} viewBox="0 0 20 20"><path d="M10 3a5 5 0 0 0-5 5c0 4-1.5 5.5-1.5 5.5h13S15 12 15 8a5 5 0 0 0-5-5Z"></path><path d="M8.4 16.5a2 2 0 0 0 3.2 0"></path></svg>);
+  if (name === "info") return (<svg {...s} viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"></circle><path d="M10 9v4M10 6.6h.01"></path></svg>);
   return null;
 }
 
@@ -150,6 +153,8 @@ function LK({ exit }) {
   const [tab, setTab] = useLkState("home");
   const [member, setMember] = useLkState("anna");
   const [passes, setPasses] = useLkState(LKD.passes);
+  const [notifs, setNotifs] = useLkState(LKD.notifications);
+  const [bellOpen, setBellOpen] = useLkState(false);
   const [appts, setAppts] = useLkState(() => {
     const m = { anna: LKD.appointments };
     LKD.family.forEach((f) => { m[f.id] = f.appointments; });
@@ -160,7 +165,7 @@ function LK({ exit }) {
   const fam = LKD.family.find((f) => f.id === member);
   const cur = member === "anna"
     ? { id: "anna", rel: "вы", patient: LKD.patient, analyses: LKD.analyses, studies: LKD.studies, visits: LKD.visits, dynamics: LKD.dynamics, hospitalization: LKD.hospitalization, program: LKD.program }
-    : { id: fam.id, rel: fam.rel, patient: fam.patient, analyses: fam.analyses, studies: fam.studies, visits: fam.visits, dynamics: null, hospitalization: null, program: null };
+    : { id: fam.id, rel: fam.rel, patient: fam.patient, analyses: fam.analyses, studies: fam.studies, visits: fam.visits, dynamics: fam.dynamics, hospitalization: fam.hospitalization, program: fam.program };
   const appointments = appts[member] || [];
 
   const doAuth = (v) => {
@@ -170,8 +175,13 @@ function LK({ exit }) {
 
   if (!auth) return (<div className="lk-root"><LKLogin onLogin={() => doAuth(true)} onExit={exit}></LKLogin></div>);
 
+  const unread = notifs.filter((n) => !n.read).length;
+  const markRead = (id) => setNotifs((ns) => ns.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  const markAllRead = () => setNotifs((ns) => ns.map((n) => ({ ...n, read: true })));
+
   const items = [
     { id: "home", icon: "home", label: "Главная" },
+    { id: "notifs", icon: "bell", label: "Уведомления", badge: unread },
     { id: "medcard", icon: "doc", label: "Медкарта" },
     { id: "results", icon: "lab", label: "Исследования и анализы" },
     { id: "booking", icon: "cal", label: "Запись на приём" },
@@ -208,7 +218,8 @@ function LK({ exit }) {
   };
 
   let panel = null;
-  if (tab === "home") panel = <LKHome go={setTab} cur={cur} passes={passes} appointments={appointments}></LKHome>;
+  if (tab === "home") panel = <LKHome go={setTab} cur={cur} passes={passes} appointments={appointments} notifs={notifs}></LKHome>;
+  else if (tab === "notifs") panel = <LKNotifications notifs={notifs} markRead={markRead} markAllRead={markAllRead}></LKNotifications>;
   else if (tab === "medcard") panel = <LKMedcard cur={cur}></LKMedcard>;
   else if (tab === "results") panel = <LKResults cur={cur}></LKResults>;
   else if (tab === "booking") panel = <LKBooking appointments={appointments} onBooked={onBooked} onCancel={onCancel} onUpdate={onUpdate} goPasses={() => setTab("passes")}></LKBooking>;
@@ -225,6 +236,37 @@ function LK({ exit }) {
           <Logo onClick={exit}></Logo>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <span className="small hide-md" style={{ color: "var(--ink-faint)" }}>Личный кабинет пациента</span>
+            <div style={{ position: "relative" }}>
+              <button
+                aria-label="Уведомления"
+                onClick={() => setBellOpen((v) => !v)}
+                style={{
+                  position: "relative", width: 42, height: 42, borderRadius: 999,
+                  border: "1px solid var(--line)", background: bellOpen ? "var(--ink)" : "var(--white)",
+                  color: bellOpen ? "#FFFDF8" : "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <LkIcon name="bell" size={19}></LkIcon>
+                {unread > 0 ? (
+                  <span style={{
+                    position: "absolute", top: -3, right: -3, minWidth: 18, height: 18, padding: "0 4px",
+                    borderRadius: 999, background: "#A33B2E", color: "#fff", fontSize: 11, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--paper)",
+                  }}>{unread}</span>
+                ) : null}
+              </button>
+              {bellOpen ? (
+                <React.Fragment>
+                  <div onClick={() => setBellOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60 }}></div>
+                  <BellDropdown
+                    notifs={notifs}
+                    markRead={markRead}
+                    markAllRead={markAllRead}
+                    onOpenAll={() => { setBellOpen(false); setTab("notifs"); window.scrollTo(0, 0); }}
+                  ></BellDropdown>
+                </React.Fragment>
+              ) : null}
+            </div>
             <div className="avatar">{cur.patient.initials}</div>
           </div>
         </div>
@@ -260,7 +302,10 @@ function LK({ exit }) {
           {items.map((it) => (
             <button key={it.id} className={"lk-item" + (tab === it.id ? " active" : "")} onClick={() => { setTab(it.id); window.scrollTo(0, 0); }}>
               <LkIcon name={it.icon}></LkIcon>
-              <span>{it.label}</span>
+              <span style={{ flex: 1 }}>{it.label}</span>
+              {it.badge > 0 ? (
+                <span style={{ minWidth: 20, height: 20, padding: "0 5px", borderRadius: 999, background: "#A33B2E", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{it.badge}</span>
+              ) : null}
             </button>
           ))}
           <hr className="divider" style={{ margin: "10px 6px" }}></hr>
@@ -269,16 +314,97 @@ function LK({ exit }) {
         </aside>
         <div style={{ minWidth: 0 }}>{panel}</div>
       </div>
+
+      <LKBottomNav
+        tab={tab}
+        go={(id) => { setTab(id); window.scrollTo(0, 0); }}
+        member={member}
+        setMember={(id) => { setMember(id); window.scrollTo(0, 0); }}
+        exit={exit}
+        logout={() => doAuth(false)}
+      ></LKBottomNav>
     </div>
   );
 }
 
+/* ---------- Нижнее таб-меню (мобильные) ---------- */
+function LKBottomNav({ tab, go, member, setMember, exit, logout }) {
+  const [more, setMore] = useLkState(false);
+  const primary = [
+    { id: "home", icon: "home", label: "Главная" },
+    { id: "results", icon: "lab", label: "Анализы" },
+    { id: "booking", icon: "cal", label: "Запись" },
+    { id: "passes", icon: "qr", label: "Пропуска" },
+  ];
+  const moreItems = [
+    { id: "notifs", icon: "bell", label: "Уведомления" },
+    { id: "medcard", icon: "doc", label: "Медкарта" },
+    { id: "hospital", icon: "bed", label: "Госпитализация" },
+    { id: "program", icon: "prog", label: "Моя программа" },
+    { id: "map", icon: "map", label: "Карта территории" },
+    { id: "profile", icon: "user", label: "Профиль" },
+  ];
+  const moreActive = moreItems.some((i) => i.id === tab);
+  const open = (id) => { setMore(false); go(id); };
+  const members = [{ id: "anna", initials: LKD.patient.initials, label: "Вы" }].concat(
+    LKD.family.map((f) => ({ id: f.id, initials: f.patient.initials, label: f.rel }))
+  );
+
+  return (
+    <React.Fragment>
+      {more ? <div className="lk-overlay" onClick={() => setMore(false)}></div> : null}
+      {more ? (
+        <div className="lk-sheet">
+          <div style={{ display: "flex", gap: 8, paddingBottom: 12, borderBottom: "1px solid var(--line-soft)", marginBottom: 8 }}>
+            {members.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => { setMember(m.id); setMore(false); }}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 3, flex: 1,
+                  background: "transparent", border: "none", padding: "6px 2px", borderRadius: 10,
+                  outline: member === m.id ? "2px solid var(--accent)" : "1px solid var(--line-soft)",
+                }}
+              >
+                <span className="avatar" style={{ width: 32, height: 32, fontSize: 12, background: member === m.id ? "var(--accent)" : "var(--accent-tint)", color: member === m.id ? "#FFFDF8" : "var(--accent-dark)" }}>{m.initials}</span>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: member === m.id ? "var(--ink)" : "var(--ink-faint)" }}>{m.label}</span>
+              </button>
+            ))}
+          </div>
+          {moreItems.map((it) => (
+            <button key={it.id} className={"lk-item" + (tab === it.id ? " active" : "")} onClick={() => open(it.id)}>
+              <LkIcon name={it.icon}></LkIcon>
+              <span>{it.label}</span>
+            </button>
+          ))}
+          <hr className="divider" style={{ margin: "8px 6px" }}></hr>
+          <button className="lk-item" onClick={exit}><LkIcon name="out"></LkIcon><span>На сайт больницы</span></button>
+          <button className="lk-item" onClick={logout} style={{ color: "#A33B2E" }}><LkIcon name="out"></LkIcon><span>Выйти</span></button>
+        </div>
+      ) : null}
+      <nav className="lk-bottom">
+        {primary.map((it) => (
+          <button key={it.id} className={tab === it.id && !more ? "active" : ""} onClick={() => open(it.id)}>
+            <LkIcon name={it.icon} size={20}></LkIcon>
+            <span>{it.label}</span>
+          </button>
+        ))}
+        <button className={more || moreActive ? "active" : ""} onClick={() => setMore(!more)}>
+          <LkIcon name="dots" size={20}></LkIcon>
+          <span>Ещё</span>
+        </button>
+      </nav>
+    </React.Fragment>
+  );
+}
+
 /* ---------- Главная кабинета ---------- */
-function LKHome({ go, cur, passes, appointments }) {
+function LKHome({ go, cur, passes, appointments, notifs }) {
   const lastPass = passes[0];
   const next = appointments[0];
   const prog = cur.program;
   const progDone = prog ? prog.items.filter((i) => i.status === "Пройдено").length : 0;
+  const pinned = (notifs || []).filter((n) => n.type === "important").slice(0, 2);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 20, flexWrap: "wrap" }}>
@@ -288,6 +414,23 @@ function LKHome({ go, cur, passes, appointments }) {
         </div>
         <button className="btn btn-primary btn-sm" onClick={() => go("booking")}>Записаться на приём</button>
       </div>
+
+      {pinned.length > 0 ? (
+        <div className="card" style={{ padding: "18px 22px", borderColor: "rgba(149,104,15,0.35)", background: "var(--warn-bg)", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 13.5, color: "var(--warn)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              <LkIcon name="info" size={16}></LkIcon> Важные объявления
+            </span>
+            <a href="#" className="small" onClick={(e) => { e.preventDefault(); go("notifs"); }} style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>Все →</a>
+          </div>
+          {pinned.map((n) => (
+            <div key={n.id} style={{ borderTop: "1px solid rgba(149,104,15,0.2)", paddingTop: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: 14.5 }}>{n.title}</div>
+              <div className="small body-soft" style={{ marginTop: 2 }}>{n.text}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {next ? (
         <div className="card" style={{ padding: "20px 26px", display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", boxShadow: "var(--shadow-sm)" }}>
@@ -381,4 +524,141 @@ function LKHomeList({ title, icon, items, onAll }) {
   );
 }
 
-Object.assign(window, { LK, LKLogin, LKHome, LkIcon, QRBox });
+Object.assign(window, { LK, LKLogin, LKHome, LkIcon, QRBox, BellDropdown, LKNotifications });
+
+/* ---------- Типы уведомлений ---------- */
+const NOTIF_META = {
+  important: { label: "Важное", icon: "info", color: "var(--warn)", bg: "var(--warn-bg)" },
+  personal: { label: "Личное", icon: "bell", color: "var(--ok)", bg: "var(--ok-bg)" },
+  action: { label: "Действие", icon: "doc", color: "var(--accent-dark)", bg: "var(--accent-tint)" },
+};
+
+/* ---------- Выпадающая панель колокольчика ---------- */
+function BellDropdown({ notifs, markRead, markAllRead, onOpenAll }) {
+  const top = notifs.slice(0, 5);
+  const unread = notifs.filter((n) => !n.read).length;
+  return (
+    <div style={{
+      position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 61,
+      width: 360, maxWidth: "calc(100vw - 32px)", background: "var(--white)",
+      border: "1px solid var(--line)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow)", overflow: "hidden",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid var(--line-soft)" }}>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>Уведомления</span>
+        {unread > 0 ? (
+          <button onClick={markAllRead} style={{ border: "none", background: "none", color: "var(--accent-dark)", fontWeight: 600, fontSize: 12.5 }}>Прочитано</button>
+        ) : null}
+      </div>
+      <div style={{ maxHeight: 360, overflowY: "auto" }}>
+        {top.map((n) => {
+          const m = NOTIF_META[n.type];
+          return (
+            <button
+              key={n.id}
+              onClick={() => markRead(n.id)}
+              style={{
+                display: "flex", gap: 12, width: "100%", textAlign: "left", border: "none",
+                background: n.read ? "transparent" : "rgba(154,123,79,0.06)",
+                padding: "13px 18px", borderBottom: "1px solid var(--line-soft)", cursor: "pointer",
+              }}
+            >
+              <span style={{ flex: "none", width: 30, height: 30, borderRadius: 99, background: m.bg, color: m.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <LkIcon name={m.icon} size={16}></LkIcon>
+              </span>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: n.read ? 600 : 700, fontSize: 13.5, color: "var(--ink)" }}>{n.title}</span>
+                  {!n.read ? <span style={{ width: 7, height: 7, borderRadius: 99, background: "#A33B2E", flex: "none" }}></span> : null}
+                </span>
+                <span style={{ display: "block", fontSize: 12.5, color: "var(--ink-faint)", marginTop: 2, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.text}</span>
+                <span style={{ display: "block", fontSize: 11.5, color: "var(--ink-faint)", marginTop: 4 }}>{n.date}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <button onClick={onOpenAll} style={{ width: "100%", border: "none", background: "var(--paper-2)", padding: "13px", fontWeight: 600, fontSize: 14, color: "var(--ink)" }}>
+        Все уведомления
+      </button>
+    </div>
+  );
+}
+
+/* ---------- Раздел «Уведомления» ---------- */
+function LKNotifications({ notifs, markRead, markAllRead }) {
+  const [filter, setFilter] = useLkState("all");
+  const unread = notifs.filter((n) => !n.read).length;
+  const filtered = notifs.filter((n) => filter === "all" || (filter === "unread" ? !n.read : n.type === filter));
+  const pinned = filtered.filter((n) => n.pinned);
+  const rest = filtered.filter((n) => !n.pinned);
+  const chips = [
+    { id: "all", label: "Все" },
+    { id: "important", label: "Важные" },
+    { id: "personal", label: "Личные" },
+    { id: "unread", label: "Непрочитанные" },
+  ];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      <div className="lk-filterbar">
+        <h1 className="h-1" style={{ fontSize: 32 }}>Уведомления</h1>
+        <div className="lk-filterbar" style={{ gap: 10 }}>
+          <div className="seg">
+            {chips.map((c) => (
+              <button key={c.id} className={filter === c.id ? "on" : ""} onClick={() => setFilter(c.id)}>{c.label}</button>
+            ))}
+          </div>
+          {unread > 0 ? (
+            <button className="btn btn-outline btn-sm" onClick={markAllRead}>Прочитать все</button>
+          ) : null}
+        </div>
+      </div>
+
+      {pinned.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="overline" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <LkIcon name="info" size={15}></LkIcon> Закреплено больницей
+          </div>
+          {pinned.map((n) => <NotifRow key={n.id} n={n} markRead={markRead}></NotifRow>)}
+        </div>
+      ) : null}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {pinned.length > 0 && rest.length > 0 ? <div className="overline">Ранее</div> : null}
+        {rest.map((n) => <NotifRow key={n.id} n={n} markRead={markRead}></NotifRow>)}
+        {filtered.length === 0 ? (
+          <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--ink-faint)" }}>Нет уведомлений в этой категории.</div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function NotifRow({ n, markRead }) {
+  const m = NOTIF_META[n.type];
+  return (
+    <div
+      onClick={() => !n.read && markRead(n.id)}
+      className="card"
+      style={{
+        padding: "18px 22px", display: "flex", gap: 16, alignItems: "flex-start",
+        cursor: n.read ? "default" : "pointer",
+        borderColor: n.pinned ? "rgba(149,104,15,0.35)" : "var(--line)",
+        background: n.read ? "var(--white)" : "rgba(154,123,79,0.05)",
+      }}
+    >
+      <span style={{ flex: "none", width: 38, height: 38, borderRadius: 99, background: m.bg, color: m.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <LkIcon name={m.icon} size={18}></LkIcon>
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 700, fontSize: 15.5 }}>{n.title}</span>
+          <span className="badge" style={{ background: m.bg, color: m.color, fontSize: 11 }}>{m.label}</span>
+          {n.pinned ? <span className="badge badge-neutral" style={{ fontSize: 11 }}>больница</span> : null}
+          {!n.read ? <span style={{ width: 8, height: 8, borderRadius: 99, background: "#A33B2E" }}></span> : null}
+        </div>
+        <p className="body-soft" style={{ fontSize: 14, marginTop: 5 }}>{n.text}</p>
+        <div className="small" style={{ color: "var(--ink-faint)", marginTop: 8 }}>{n.date}</div>
+      </div>
+    </div>
+  );
+}

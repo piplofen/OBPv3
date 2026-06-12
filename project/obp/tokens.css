@@ -32,6 +32,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { scroll-behavior: auto; }
+html, body { overflow-x: clip; max-width: 100%; }
 
 body {
   background: var(--paper);
@@ -419,6 +420,42 @@ button { font-family: inherit; cursor: pointer; }
   text-align: left;
 }
 
+/* ---------- Сегментированные переключатели ---------- */
+.lk-filterbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.seg {
+  display: inline-flex;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.seg button {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.seg button.on { background: var(--ink); color: #FFFDF8; }
+.seg.accent button.on { background: var(--accent); color: #FFFDF8; }
+
+/* ---------- Нижнее таб-меню ЛК (только мобильные) ---------- */
+.lk-bottom { display: none; }
+.lk-sheet { display: none; }
+.lk-overlay { display: none; }
+
 /* ---------- Адаптивные сетки (переопределяют inline-стили) ---------- */
 
 @media (max-width: 1120px) {
@@ -461,22 +498,64 @@ button { font-family: inherit; cursor: pointer; }
   .step-label { font-size: 10px !important; }
   .pad-resp { padding: 24px 20px !important; }
 
-  /* Личный кабинет: сайдбар → горизонтальная лента */
-  .lk-shell { grid-template-columns: 1fr; padding: 14px 14px 48px; gap: 16px; }
-  .lk-side {
-    position: static;
-    flex-direction: row;
-    align-items: center;
-    overflow-x: auto;
-    padding: 10px;
-    gap: 6px;
-    -webkit-overflow-scrolling: touch;
+  /* Личный кабинет: сайдбар скрыт, навигация — нижнее таб-меню */
+  .lk-shell { grid-template-columns: 1fr; padding: 14px 14px 104px; gap: 16px; }
+  .lk-side { display: none !important; }
+  .lk-bottom {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 70;
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border-top: 1px solid var(--line);
+    padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
   }
-  .lk-side .lk-profile-block { display: none !important; }
-  .lk-side .lk-fam { padding: 0 2px !important; flex: none; }
-  .lk-fam button { flex: none !important; width: 54px; }
-  .lk-side hr { display: none; }
-  .lk-item { width: auto; flex: none; padding: 10px 13px; font-size: 13px; white-space: nowrap; }
+  .lk-bottom button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    border-radius: 12px;
+    padding: 7px 2px 6px;
+    min-height: 50px;
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-faint);
+  }
+  .lk-bottom button.active { color: var(--accent-dark); background: rgba(154,123,79,0.10); }
+  .lk-overlay {
+    display: block;
+    position: fixed; inset: 0;
+    z-index: 68;
+    background: rgba(16, 29, 49, 0.38);
+  }
+  .lk-sheet {
+    display: block;
+    position: fixed;
+    left: 10px; right: 10px;
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    z-index: 69;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    max-height: 68vh;
+    overflow-y: auto;
+  }
+  .sticky-confirm { bottom: 96px !important; }
+
+  /* Сегментированные переключатели — на всю ширину */
+  .lk-filterbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .seg { width: 100%; }
+  .seg button { flex: 1; text-align: center; padding: 11px 10px; }
 }
 
 /* ---------- Маленькие телефоны ---------- */
@@ -490,10 +569,12 @@ button { font-family: inherit; cursor: pointer; }
   .btn { padding: 13px 22px; font-size: 14.5px; }
   .btn-sm { padding: 10px 16px; font-size: 13.5px; }
   .lead { font-size: 16.5px; }
-  .lk-shell { padding: 12px 10px 40px; }
+  .lk-shell { padding: 12px 10px 100px; }
   .lk-fam button { width: 48px; }
   .modal-card { padding: 24px 16px !important; }
   .ph-label { font-size: 10px; padding: 4px 8px; }
+  .step-label { display: none !important; }
+  .step-label-active { display: block !important; font-size: 10.5px !important; }
 }
 
 /* ---------- Скроллбар-аккуратность ---------- */

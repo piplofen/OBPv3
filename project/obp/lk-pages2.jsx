@@ -139,7 +139,7 @@ function LKHospital({ cur }) {
               }}>
                 {i < h.currentStep ? "✓" : i + 1}
               </div>
-              <div className="small step-label" style={{ fontSize: 12, textAlign: "center", fontWeight: i === h.currentStep ? 700 : 500, color: i === h.currentStep ? "var(--ink)" : "var(--ink-faint)", maxWidth: 110 }}>{s}</div>
+              <div className={"small step-label" + (i === h.currentStep ? " step-label-active" : "")} style={{ fontSize: 12, textAlign: "center", fontWeight: i === h.currentStep ? 700 : 500, color: i === h.currentStep ? "var(--ink)" : "var(--ink-faint)", maxWidth: 110 }}>{s}</div>
             </div>
           ))}
         </div>

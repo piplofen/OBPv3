@@ -140,22 +140,75 @@ function PageHome({ nav, onBook, openDirection }) {
         </div>
       </section>
 
-      {/* ---------- CTA ---------- */}
-      <section className="section section-tint" style={{ padding: "80px 0" }}>
-        <div className="wrap two-col" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 48, alignItems: "center" }}>
+      {/* ---------- CTA + Личный кабинет ---------- */}
+      <section className="section section-tint" style={{ padding: "88px 0" }}>
+        <div className="wrap two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }}>
           <div>
-            <h2 className="h-1" style={{ marginBottom: 14 }}>Запишитесь на приём</h2>
-            <p className="lead" style={{ maxWidth: 560 }}>
-              Координатор подберёт врача и удобное время. Запись по телефону или через короткую форму.
+            <div className="overline" style={{ marginBottom: 14 }}>Первичный приём</div>
+            <h2 className="h-1" style={{ marginBottom: 18 }}>Запишитесь — остальное мы берём на себя</h2>
+            <p className="lead" style={{ maxWidth: 520, marginBottom: 22 }}>
+              Координатор подберёт врача и удобное время. После первого приёма мы автоматически
+              заводим вам <strong style={{ color: "var(--ink)" }}>личный кабинет пациента</strong> — вся
+              медицина переезжает в одно окно.
             </p>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+              {[
+                "Один врач ведёт вас на всех этапах — приём, обследование, лечение, восстановление",
+                "Диагностика, операционные и стационар — в одном комплексе, без переездов между клиниками",
+                "Собственная лаборатория: анализы не уходят в сторонние службы",
+              ].map((t) => (
+                <li key={t} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <Check></Check>
+                  <span style={{ fontSize: 15.5, lineHeight: 1.5, textWrap: "pretty" }}>{t}</span>
+                </li>
+              ))}
+            </ul>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+              <button className="btn btn-ink" onClick={onBook}>Записаться на приём</button>
+              <a href="tel:84993333000" style={{ textDecoration: "none", fontWeight: 700, fontSize: 18 }}>8 (499) 333-30-00</a>
+            </div>
           </div>
-          <div className="cta-right" style={{ display: "flex", flexDirection: "column", gap: 14, alignItems: "flex-end" }}>
-            <button className="btn btn-ink" onClick={onBook}>Записаться на приём</button>
-            <a href="tel:84993333000" style={{ textDecoration: "none", fontWeight: 700, fontSize: 18 }}>8 (499) 333-30-00</a>
+
+          <div className="card" style={{ padding: 32, boxShadow: "var(--shadow)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+              <LogoMark size={34}></LogoMark>
+              <span className="overline" style={{ marginBottom: 0 }}>Личный кабинет пациента</span>
+            </div>
+            <h3 className="h-2" style={{ fontSize: 24, marginBottom: 20 }}>Что внутри</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 22px" }}>
+              <CabFeature title="Анализы и исследования" text="результаты с историей и графиками динамики"></CabFeature>
+              <CabFeature title="Запись и расписание" text="онлайн-сетка врачей, перенос и отмена"></CabFeature>
+              <CabFeature title="Электронные пропуска" text="QR на проходную и проезд авто через КПП"></CabFeature>
+              <CabFeature title="Медкарта" text="история визитов и заключения врачей"></CabFeature>
+              <CabFeature title="Госпитализация" text="статус, палата и чек-лист подготовки"></CabFeature>
+              <CabFeature title="Семейный доступ" text="кабинеты детей и родителей под одним входом"></CabFeature>
+            </div>
           </div>
         </div>
       </section>
     </main>
+  );
+}
+
+function Check() {
+  return (
+    <span style={{
+      flex: "none", width: 22, height: 22, borderRadius: 99, marginTop: 1,
+      background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M2.5 6.2 5 8.5l4.5-5" stroke="#FFFDF8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
+      </svg>
+    </span>
+  );
+}
+
+function CabFeature({ title, text }) {
+  return (
+    <div style={{ borderTop: "1px solid var(--line-soft)", paddingTop: 12 }}>
+      <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 3 }}>{title}</div>
+      <div className="small" style={{ color: "var(--ink-faint)", lineHeight: 1.4 }}>{text}</div>
+    </div>
   );
 }
 
