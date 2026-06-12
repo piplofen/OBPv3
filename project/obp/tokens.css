@@ -451,7 +451,47 @@ button { font-family: inherit; cursor: pointer; }
 .seg button.on { background: var(--ink); color: #FFFDF8; }
 .seg.accent button.on { background: var(--accent); color: #FFFDF8; }
 
+/* ---------- Пуш-уведомления (тосты) ---------- */
+@keyframes pushIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.push-stack {
+  position: fixed;
+  top: 84px;
+  right: 24px;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+.push-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px 16px 16px 18px;
+  cursor: pointer;
+  animation: pushIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.15s ease;
+}
+.push-toast:hover { transform: translateY(-2px); }
+.push-ic {
+  flex: none;
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+}
+
 /* ---------- Нижнее таб-меню ЛК (только мобильные) ---------- */
+.bell-overlay { display: none; }
 .lk-bottom { display: none; }
 .lk-sheet { display: none; }
 .lk-overlay { display: none; }
@@ -551,6 +591,35 @@ button { font-family: inherit; cursor: pointer; }
     overflow-y: auto;
   }
   .sticky-confirm { bottom: 96px !important; }
+
+  /* Панель колокольчика → нижняя шторка */
+  .bell-overlay { display: block !important; background: rgba(16, 29, 49, 0.38); z-index: 79 !important; }
+  .bell-panel {
+    position: fixed !important;
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    max-width: none !important;
+    border-radius: var(--radius-lg) !important;
+    z-index: 80 !important;
+  }
+  .bell-list { max-height: 56vh !important; }
+
+  /* Пуш-тосты — снизу над таб-меню, во всю ширину */
+  .push-stack {
+    top: auto;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: none;
+  }
+  @keyframes pushIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
 
   /* Сегментированные переключатели — на всю ширину */
   .lk-filterbar { flex-direction: column; align-items: stretch; gap: 10px; }

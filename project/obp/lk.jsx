@@ -1,5 +1,5 @@
 // ОБП ЛК — вход, каркас кабинета, главная (дашборд), QR
-const { useState: useLkState, useEffect: useLkEffect } = React;
+const { useState: useLkState, useEffect: useLkEffect, useRef: useLkRef } = React;
 const LKD = window.OBP_LK;
 
 /* ---------- Мини-иконки (простые штрихи) ---------- */
@@ -155,6 +155,38 @@ function LK({ exit }) {
   const [passes, setPasses] = useLkState(LKD.passes);
   const [notifs, setNotifs] = useLkState(LKD.notifications);
   const [bellOpen, setBellOpen] = useLkState(false);
+  const bellBtnRef = useLkRef(null);
+  useLkEffect(() => {
+    if (!bellOpen) return;
+    const onDown = (e) => {
+      if (e.target.closest && (e.target.closest(".bell-panel") || e.target.closest('[aria-label="\u0423\u0432\u0435\u0434\u043e\u043c\u043b\u0435\u043d\u0438\u044f"]'))) return;
+      setBellOpen(false);
+    };
+    const onEsc = (e) => { if (e.key === "Escape") setBellOpen(false); };
+    document.addEventListener("pointerdown", onDown, true);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("pointerdown", onDown, true);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [bellOpen]);
+  const [toasts, setToasts] = useLkState([]);
+  useLkEffect(() => {
+    if (!auth) return;
+    const timers = [];
+    (LKD.pushes || []).forEach((p, i) => {
+      const t = setTimeout(() => {
+        const id = "push-" + Date.now() + "-" + i;
+        const notif = { id, type: p.type, pinned: p.type === "important", read: false, date: p.date, title: p.title, text: p.text };
+        setNotifs((ns) => [notif, ...ns]);
+        setToasts((ts) => [{ ...notif, goto: p.goto, toastId: id }, ...ts].slice(0, 3));
+        const hide = setTimeout(() => setToasts((ts) => ts.filter((x) => x.toastId !== id)), 6500);
+        timers.push(hide);
+      }, p.delay);
+      timers.push(t);
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [auth]);
   const [appts, setAppts] = useLkState(() => {
     const m = { anna: LKD.appointments };
     LKD.family.forEach((f) => { m[f.id] = f.appointments; });
@@ -178,6 +210,7 @@ function LK({ exit }) {
   const unread = notifs.filter((n) => !n.read).length;
   const markRead = (id) => setNotifs((ns) => ns.map((n) => (n.id === id ? { ...n, read: true } : n)));
   const markAllRead = () => setNotifs((ns) => ns.map((n) => ({ ...n, read: true })));
+  const dismissToast = (id) => setToasts((ts) => ts.filter((x) => x.toastId !== id));
 
   const items = [
     { id: "home", icon: "home", label: "Главная" },
@@ -238,6 +271,7 @@ function LK({ exit }) {
             <span className="small hide-md" style={{ color: "var(--ink-faint)" }}>Личный кабинет пациента</span>
             <div style={{ position: "relative" }}>
               <button
+                ref={bellBtnRef}
                 aria-label="Уведомления"
                 onClick={() => setBellOpen((v) => !v)}
                 style={{
@@ -255,17 +289,6 @@ function LK({ exit }) {
                   }}>{unread}</span>
                 ) : null}
               </button>
-              {bellOpen ? (
-                <React.Fragment>
-                  <div onClick={() => setBellOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60 }}></div>
-                  <BellDropdown
-                    notifs={notifs}
-                    markRead={markRead}
-                    markAllRead={markAllRead}
-                    onOpenAll={() => { setBellOpen(false); setTab("notifs"); window.scrollTo(0, 0); }}
-                  ></BellDropdown>
-                </React.Fragment>
-              ) : null}
             </div>
             <div className="avatar">{cur.patient.initials}</div>
           </div>
@@ -323,6 +346,25 @@ function LK({ exit }) {
         exit={exit}
         logout={() => doAuth(false)}
       ></LKBottomNav>
+
+      {bellOpen ? (
+        <React.Fragment>
+          <div className="bell-overlay" onClick={() => setBellOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(16,29,49,0.18)" }}></div>
+          <BellDropdown
+            anchorRef={bellBtnRef}
+            notifs={notifs}
+            markRead={markRead}
+            markAllRead={markAllRead}
+            onOpenAll={() => { setBellOpen(false); setTab("notifs"); window.scrollTo(0, 0); }}
+          ></BellDropdown>
+        </React.Fragment>
+      ) : null}
+
+      <PushStack
+        toasts={toasts}
+        onDismiss={dismissToast}
+        onOpen={(t) => { dismissToast(t.toastId); markRead(t.id); setTab(t.goto || "notifs"); window.scrollTo(0, 0); }}
+      ></PushStack>
     </div>
   );
 }
@@ -405,6 +447,7 @@ function LKHome({ go, cur, passes, appointments, notifs }) {
   const prog = cur.program;
   const progDone = prog ? prog.items.filter((i) => i.status === "Пройдено").length : 0;
   const pinned = (notifs || []).filter((n) => n.type === "important").slice(0, 2);
+  const [annHidden, setAnnHidden] = useLkState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 20, flexWrap: "wrap" }}>
@@ -415,13 +458,22 @@ function LKHome({ go, cur, passes, appointments, notifs }) {
         <button className="btn btn-primary btn-sm" onClick={() => go("booking")}>Записаться на приём</button>
       </div>
 
-      {pinned.length > 0 ? (
+      {pinned.length > 0 && !annHidden ? (
         <div className="card" style={{ padding: "18px 22px", borderColor: "rgba(149,104,15,0.35)", background: "var(--warn-bg)", display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 13.5, color: "var(--warn)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
               <LkIcon name="info" size={16}></LkIcon> Важные объявления
             </span>
-            <a href="#" className="small" onClick={(e) => { e.preventDefault(); go("notifs"); }} style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>Все →</a>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <a href="#" className="small" onClick={(e) => { e.preventDefault(); go("notifs"); }} style={{ color: "var(--accent-dark)", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>Все →</a>
+              <button
+                aria-label="Скрыть объявления"
+                onClick={() => setAnnHidden(true)}
+                style={{ width: 28, height: 28, borderRadius: 99, border: "none", background: "transparent", color: "var(--warn)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3.5 3.5l8 8M11.5 3.5l-8 8"></path></svg>
+              </button>
+            </span>
           </div>
           {pinned.map((n) => (
             <div key={n.id} style={{ borderTop: "1px solid rgba(149,104,15,0.2)", paddingTop: 10 }}>
@@ -524,7 +576,41 @@ function LKHomeList({ title, icon, items, onAll }) {
   );
 }
 
-Object.assign(window, { LK, LKLogin, LKHome, LkIcon, QRBox, BellDropdown, LKNotifications });
+Object.assign(window, { LK, LKLogin, LKHome, LkIcon, QRBox, BellDropdown, LKNotifications, PushStack });
+
+/* ---------- Пуш-уведомления (тосты) ---------- */
+function PushStack({ toasts, onDismiss, onOpen }) {
+  if (!toasts || toasts.length === 0) return null;
+  return (
+    <div className="push-stack">
+      {toasts.map((t) => {
+        const m = NOTIF_META[t.type] || NOTIF_META.personal;
+        return (
+          <div key={t.toastId} className="push-toast" onClick={() => onOpen(t)}>
+            <span className="push-ic" style={{ background: m.bg, color: m.color }}>
+              <LkIcon name={m.icon} size={18}></LkIcon>
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className="badge" style={{ background: m.bg, color: m.color, fontSize: 10.5 }}>{m.label}</span>
+                <span className="small" style={{ color: "var(--ink-faint)", fontSize: 11.5 }}>{t.date}</span>
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 14.5, marginTop: 5 }}>{t.title}</div>
+              <div className="small body-soft" style={{ marginTop: 2, lineHeight: 1.4 }}>{t.text}</div>
+            </div>
+            <button
+              aria-label="Скрыть"
+              onClick={(e) => { e.stopPropagation(); onDismiss(t.toastId); }}
+              style={{ flex: "none", width: 28, height: 28, borderRadius: 99, border: "none", background: "transparent", color: "var(--ink-faint)", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M3.5 3.5l7 7M10.5 3.5l-7 7"></path></svg>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /* ---------- Типы уведомлений ---------- */
 const NOTIF_META = {
@@ -534,12 +620,17 @@ const NOTIF_META = {
 };
 
 /* ---------- Выпадающая панель колокольчика ---------- */
-function BellDropdown({ notifs, markRead, markAllRead, onOpenAll }) {
+function BellDropdown({ notifs, markRead, markAllRead, onOpenAll, anchorRef }) {
   const top = notifs.slice(0, 5);
   const unread = notifs.filter((n) => !n.read).length;
+  const rect = anchorRef && anchorRef.current ? anchorRef.current.getBoundingClientRect() : null;
+  const deskStyle = rect
+    ? { top: rect.bottom + 12, right: Math.max(12, window.innerWidth - rect.right) }
+    : { top: 72, right: 24 };
   return (
-    <div style={{
-      position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 61,
+    <div className="bell-panel" style={{
+      position: "fixed", zIndex: 91,
+      top: deskStyle.top, right: deskStyle.right,
       width: 360, maxWidth: "calc(100vw - 32px)", background: "var(--white)",
       border: "1px solid var(--line)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow)", overflow: "hidden",
     }}>
@@ -549,7 +640,7 @@ function BellDropdown({ notifs, markRead, markAllRead, onOpenAll }) {
           <button onClick={markAllRead} style={{ border: "none", background: "none", color: "var(--accent-dark)", fontWeight: 600, fontSize: 12.5 }}>Прочитано</button>
         ) : null}
       </div>
-      <div style={{ maxHeight: 360, overflowY: "auto" }}>
+      <div className="bell-list" style={{ maxHeight: 360, overflowY: "auto" }}>
         {top.map((n) => {
           const m = NOTIF_META[n.type];
           return (
